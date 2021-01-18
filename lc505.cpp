@@ -1,77 +1,63 @@
 class Solution {
 public:
     int shortestDistance(vector<vector<int>>& maze, vector<int>& start, vector<int>& destination) {
-        
         int n = maze.size(), m = maze[0].size();
-        // vector<vector<int>> visited
-        // we use -1 to represent the cell has been visited
         
-        maze[start[0]][start[1]] = -1;
-        vector<vector<int>> dp(n, vector<int>(m, 0));
+        vector<vector<int>> dis(n, vector<int>(m, INT_MAX));
+        dis[start[0]][start[1]] = 0;
         
-        return shortestDistanceUtil(maze, start, destination, dp);
+        vector<vector<bool>> visited(n, vector<bool>(m, false));
         
+        priority_queue<vector<int>, vector<vector<int>>, greater<vector<int>>> next; // dis, x, y
+        next.push({0, start[0], start[1]});
         
-    }
-    
-private:
-    vector<vector<int>> direcs{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    
-    int shortestDistanceUtil(vector<vector<int>>& maze, vector<int> start, vector<int>& dest, vector<vector<int>>& dp)
-    {
-        if(start[0] == dest[0] && start[1] == dest[1])
-            return 0;
-        
-        if(dp[start[0]][start[1]] != 0)
-            return dp[start[0]][start[1]];
-        
-        // maze[start[0]][start[1]] = -1;
-        
-        int mindis = INT_MAX;
-        int steps = 0;
-        for(auto i{0}; i<4; i++)
+        while(!next.empty())
         {
-            vector<int> next = findnexthop(maze, start, direcs[i], &steps);
-            if(maze[next[0]][next[1]] == 0)
+            vector<int> cur = next.top();
+            next.pop();
+            
+            if(visited[cur[1]][cur[2]])
+                continue; // we have visited this position before
+            
+            if(cur[1] == destination[0] && cur[2] == destination[1])
+                return cur[0]; // if we find the dest, return the dis
+            
+            visited[cur[1]][cur[2]] = true;
+            
+            // update the distance to the neighbours of cur position
+            for(int i{0}; i<4; i++)
             {
-                // cout<<start[0] << ' ' << start[1] << endl;
-                // cout<<next[0] << ' ' << next[1]<<endl;
-                // cout<<steps<<endl;
-                maze[next[0]][next[1]] = -1;
-                int nextsteps = shortestDistanceUtil(maze, next, dest, dp);
-                if(nextsteps != -1)
-                    mindis = min(mindis, steps + nextsteps);
-                maze[next[0]][next[1]] = 0;
+                int s = findDis(maze, cur[1], cur[2], i);
+                if(s != 0)
+                {
+                    int tempdis = cur[0] + s;
+                    int nextx = cur[1] + (s * directions[i][0]);
+                    int nexty = cur[2] + (s * directions[i][1]);
+                    if(tempdis < dis[nextx][nexty])
+                    {
+                        dis[nextx][nexty] = tempdis;
+                        next.push({tempdis, nextx, nexty});
+                    }
+                }
             }
         }
         
-        // maze[start[0]][start[1]] = 1;
-        
-        if(mindis == INT_MAX)
-            return mindis = -1;
-        
-        dp[start[0]][start[1]] = mindis;
-        
-        return mindis;
+        return -1;
     }
     
-    vector<int> findnexthop(vector<vector<int>>& maze, vector<int> start, vector<int>& direc, int* steps)
+private:
+    vector<vector<int>> directions{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    
+    int findDis(vector<vector<int>>& maze, int x, int y, int di)
     {
-        *steps = 0;
-        
-        while(start[0]>=0 && start[0]<maze.size() && start[1]>=0 && start[1]<maze[0].size() && maze[start[0]][start[1]] != 1)
+        int s = 0;
+        while(x >= 0 && x<maze.size() && y >= 0 && y<maze[0].size() && maze[x][y] == 0)
         {
-            start[0] += direc[0];
-            start[1] += direc[1];
-            
-            *steps = *steps + 1;
+            x += directions[di][0];
+            y += directions[di][1];
+            s++;
         }
         
-        start[0] -= direc[0];
-        start[1] -= direc[1];
-        *steps = *steps - 1;
-        
-        // maze[start[0]][start[1]] = -1;
-        return start;
+        return s-1;
     }
 };
